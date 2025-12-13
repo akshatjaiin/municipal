@@ -17,7 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+# Import custom admin site
+from civic_saathi.admin_site import municipal_admin
+
 urlpatterns = [
     path("", include("civic_saathi.urls")),
-    path("admin/", admin.site.urls),
+    path("admin/", municipal_admin.urls),
 ]

@@ -1,0 +1,223 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block result_list %}
+<style>
+    .complaint-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-left: 5px solid #bdc3c7;
+        transition: transform 0.2s;
+    }
+    
+    .complaint-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-pending { border-left-color: #f39c12; }
+    .status-in_progress { border-left-color: #3498db; }
+    .status-resolved { border-left-color: #2ecc71; }
+    .status-escalated { border-left-color: #e74c3c; }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .complaint-id {
+        font-weight: bold;
+        color: #7f8c8d;
+        font-size: 12px;
+    }
+    
+    .complaint-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 0;
+    }
+    
+    .complaint-meta {
+        font-size: 12px;
+        color: #95a5a6;
+        margin-bottom: 15px;
+    }
+    
+    /* The Tree Flow Visualization */
+    .flow-container {
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
+    
+    .flow-node {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        min-width: 60px;
+    }
+    
+    .flow-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #ecf0f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        margin-bottom: 5px;
+        border: 2px solid #bdc3c7;
+        z-index: 2;
+    }
+    
+    .flow-line {
+        flex-grow: 1;
+        height: 2px;
+        background: #bdc3c7;
+        margin: 0 5px;
+        margin-bottom: 20px; /* Align with icon center roughly */
+    }
+    
+    .flow-label {
+        font-size: 10px;
+        color: #7f8c8d;
+        text-align: center;
+        max-width: 80px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Active States */
+    .active-node .flow-icon {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+    
+    .active-node .flow-label {
+        color: #3498db;
+        font-weight: bold;
+    }
+    
+    .completed-node .flow-icon {
+        background: #2ecc71;
+        color: white;
+        border-color: #2ecc71;
+    }
+    
+    .escalated-node .flow-icon {
+        background: #e74c3c;
+        color: white;
+        border-color: #e74c3c;
+    }
+
+    .action-btn {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #3498db;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    
+    .action-btn:hover { background: #2980b9; color: white; }
+</style>
+
+<div style="padding: 10px;">
+    {% if cl.result_list %}
+        {% for result in cl.result_list %}
+        <div class="complaint-card status-{{ result.status }}">
+            <div class="card-header">
+                <div>
+                    <span class="complaint-id">#{{ result.id }}</span>
+                    <h3 class="complaint-title">
+                        <a href="{% url 'admin:civic_saathi_complaint_change' result.id %}">{{ result.title }}</a>
+                    </h3>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-{{ result.status }}" style="padding: 5px 10px; border-radius: 15px; background: #eee; font-size: 11px; text-transform: uppercase;">
+                        {{ result.status }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="complaint-meta">
+                📅 {{ result.created_at|date:"M d, Y" }} &nbsp;|&nbsp; 
+                📍 {{ result.location }} &nbsp;|&nbsp; 
+                🏢 {{ result.department.name|default:"No Dept" }}
+            </div>
+
+            <!-- Visual Tree Flow -->
+            <div class="flow-container">
+                <!-- Node 1: Citizen -->
+                <div class="flow-node completed-node">
+                    <div class="flow-icon">👤</div>
+                    <div class="flow-label">Citizen</div>
+                </div>
+                
+                <div class="flow-line"></div>
+                
+                <!-- Node 2: Officer -->
+                <div class="flow-node {% if result.current_officer %}active-node{% endif %}">
+                    <div class="flow-icon">👔</div>
+                    <div class="flow-label">
+                        {% if result.current_officer %}
+                            {{ result.current_officer.user.first_name }}
+                        {% else %}
+                            Pending
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="flow-line"></div>
+                
+                <!-- Node 3: Worker -->
+                <div class="flow-node {% if result.current_worker %}active-node{% endif %}">
+                    <div class="flow-icon">👷</div>
+                    <div class="flow-label">
+                        {% if result.current_worker %}
+                            {{ result.current_worker.user.first_name }}
+                        {% else %}
+                            ...
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if result.status == 'escalated' %}
+                <div class="flow-line" style="background: #e74c3c;"></div>
+                <div class="flow-node escalated-node">
+                    <div class="flow-icon">⚠</div>
+                    <div class="flow-label">Escalated</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div style="margin-top: 10px; text-align: right;">
+                <a href="{% url 'admin:civic_saathi_complaint_change' result.id %}" class="action-btn">View File &rarr;</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="padding: 20px; text-align: center; color: #7f8c8d;">
+            No complaints found.
+        </div>
+    {% endif %}
+    
+    <!-- Pagination -->
+    {% block pagination %}{% pagination cl %}{% endblock %}
+</div>
+{% endblock %}

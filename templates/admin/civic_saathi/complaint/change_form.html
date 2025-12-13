@@ -1,0 +1,281 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block after_field_sets %}
+<style>
+    .complaint-pipeline {
+        margin: 20px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .pipeline-header {
+        font-size: 18px;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .pipeline-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin-top: 30px;
+    }
+
+    .pipeline-steps::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #e0e0e0;
+        z-index: 1;
+    }
+
+    .step {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        width: 20%;
+    }
+
+    .step-circle {
+        width: 45px;
+        height: 45px;
+        background: #e0e0e0;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        border: 4px solid white;
+        transition: all 0.3s;
+    }
+
+    .step.active .step-circle {
+        background: #3498db;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+    }
+
+    .step.completed .step-circle {
+        background: #2ecc71;
+    }
+    
+    .step.escalated .step-circle {
+        background: #e74c3c;
+    }
+
+    .step-label {
+        font-size: 12px;
+        color: #7f8c8d;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    
+    .step.active .step-label {
+        color: #3498db;
+    }
+
+    .step-detail {
+        font-size: 11px;
+        color: #95a5a6;
+        margin-top: 5px;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 10px;
+        display: inline-block;
+    }
+
+    /* Vertical Tree for Hierarchy */
+    .hierarchy-tree {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #3498db;
+    }
+    
+    .tree-node {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    
+    .tree-node:last-child { margin-bottom: 0; }
+    
+    .tree-line {
+        position: absolute;
+        left: 20px;
+        top: 35px;
+        bottom: -25px;
+        width: 2px;
+        background: #bdc3c7;
+    }
+    
+    .tree-node:last-child .tree-line { display: none; }
+    
+    .node-avatar {
+        width: 40px;
+        height: 40px;
+        background: #fff;
+        border: 2px solid #bdc3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        z-index: 2;
+    }
+    
+    .node-content {
+        margin-left: 15px;
+        flex: 1;
+    }
+    
+    .node-role {
+        font-size: 11px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .node-name {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .node-status {
+        float: right;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+    
+    .status-pending { background: #f39c12; color: white; }
+    .status-approved { background: #2ecc71; color: white; }
+    .status-working { background: #3498db; color: white; }
+    
+    .current-node .node-avatar {
+        border-color: #3498db;
+        background: #3498db;
+        color: white;
+    }
+</style>
+
+<div class="complaint-pipeline">
+    <div class="pipeline-header">🚀 Complaint Resolution Flow</div>
+    
+    <!-- Horizontal Progress -->
+    <div class="pipeline-steps">
+        <!-- Step 1: Reported -->
+        <div class="step completed">
+            <div class="step-circle">1</div>
+            <div class="step-label">Reported</div>
+            <div class="step-detail">{{ original.created_at|date:"M d, H:i" }}</div>
+        </div>
+
+        <!-- Step 2: Assigned -->
+        <div class="step {% if original.current_officer %}completed{% else %}active{% endif %}">
+            <div class="step-circle">2</div>
+            <div class="step-label">Assigned</div>
+            <div class="step-detail">
+                {% if original.department %}
+                    {{ original.department.name }}
+                {% else %}
+                    Pending Dept
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Step 3: Worker -->
+        <div class="step {% if original.current_worker %}completed{% elif original.current_officer %}active{% endif %}">
+            <div class="step-circle">3</div>
+            <div class="step-label">Worker</div>
+            <div class="step-detail">
+                {% if original.current_worker %}
+                    {{ original.current_worker.user.first_name }}
+                {% else %}
+                    Waiting...
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Step 4: In Progress -->
+        <div class="step {% if original.status == 'in_progress' %}active{% elif original.status == 'resolved' %}completed{% endif %}">
+            <div class="step-circle">4</div>
+            <div class="step-label">Working</div>
+            <div class="step-detail">On Site</div>
+        </div>
+
+        <!-- Step 5: Resolved -->
+        <div class="step {% if original.status == 'resolved' %}completed{% endif %}">
+            <div class="step-circle">5</div>
+            <div class="step-label">Resolved</div>
+            <div class="step-detail">Closed</div>
+        </div>
+    </div>
+
+    <!-- Vertical Hierarchy Tree (Who is responsible?) -->
+    <div class="hierarchy-tree">
+        <div class="pipeline-header" style="font-size: 14px; border: none; margin-bottom: 10px;">👥 Responsibility Chain (Lower to Upper)</div>
+        
+        <!-- Level 1: Worker -->
+        <div class="tree-node {% if original.current_worker %}current-node{% endif %}">
+            <div class="tree-line"></div>
+            <div class="node-avatar">👷</div>
+            <div class="node-content">
+                <div class="node-role">Ground Level (Worker)</div>
+                <div class="node-name">
+                    {% if original.current_worker %}
+                        {{ original.current_worker.user.get_full_name|default:original.current_worker.user.username }}
+                    {% else %}
+                        <span style="color: #95a5a6; font-style: italic;">Not assigned yet</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if original.current_worker %}
+                <span class="node-status status-working">Active</span>
+            {% endif %}
+        </div>
+
+        <!-- Level 2: Supervisor/Officer -->
+        <div class="tree-node {% if original.current_officer and not original.current_worker %}current-node{% endif %}">
+            <div class="tree-line"></div>
+            <div class="node-avatar">👔</div>
+            <div class="node-content">
+                <div class="node-role">Supervisor (Officer)</div>
+                <div class="node-name">
+                    {% if original.current_officer %}
+                        {{ original.current_officer.user.get_full_name|default:original.current_officer.user.username }}
+                    {% else %}
+                        <span style="color: #95a5a6;">Pending Assignment</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Level 3: Department Head (Escalation) -->
+        <div class="tree-node {% if original.status == 'escalated' %}current-node{% endif %}">
+            <div class="node-avatar" style="{% if original.status == 'escalated' %}background: #e74c3c; border-color: #c0392b;{% endif %}">🏛️</div>
+            <div class="node-content">
+                <div class="node-role">Department Head</div>
+                <div class="node-name">{{ original.department.name }} Head</div>
+            </div>
+            {% if original.status == 'escalated' %}
+                <span class="node-status" style="background: #e74c3c; color: white;">⚠ ESCALATED</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %}

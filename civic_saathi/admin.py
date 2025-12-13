@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
+from django.contrib import messages
 from datetime import timedelta
 from .models import (
     Department, Officer, Worker,
@@ -8,8 +9,22 @@ from .models import (
     ComplaintEscalation, WorkerAttendance, Facility, FacilityInspection,
     SLAConfig, Streetlight
 )
+# Email notification service
+from .email_service import (
+    send_complaint_registered_email,
+    send_worker_assignment_email,
+    send_status_update_email,
+    send_escalation_email
+)
 
-admin.site.site_header = "Municipal Governance Panel"
+# Use custom admin site for dashboard stats
+from .admin_site import municipal_admin
+
+# Override default admin site
+admin.site = municipal_admin
+admin.sites.site = municipal_admin
+
+admin.site.site_header = "🏛️ Municipal Governance Panel"
 admin.site.site_title = "Municipal Admin"
 admin.site.index_title = "Dashboard"
 
@@ -341,9 +356,16 @@ class ComplaintAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
+        is_new = not change
+        old_status = None
+        old_worker = None
+        
         if change:
-            # Create log entry
+            # Get old values before save
             old_obj = Complaint.objects.get(pk=obj.pk)
+            old_status = old_obj.status
+            old_worker = old_obj.current_worker
+            
             if old_obj.status != obj.status or old_obj.current_worker != obj.current_worker:
                 ComplaintLog.objects.create(
                     complaint=obj,
@@ -354,28 +376,76 @@ class ComplaintAdmin(admin.ModelAdmin):
                     new_assignee=str(obj.current_worker) if obj.current_worker else "",
                     note=f"Updated by {request.user.username}"
                 )
+        
         super().save_model(request, obj, form, change)
+        
+        # Send email notifications
+        try:
+            if is_new:
+                # New complaint registered
+                if send_complaint_registered_email(obj):
+                    messages.success(request, f"📧 Email notification sent for new complaint #{obj.id}")
+            else:
+                # Worker assignment changed
+                if obj.current_worker and obj.current_worker != old_worker:
+                    results = send_worker_assignment_email(obj, obj.current_worker, request.user)
+                    if results:
+                        messages.success(request, f"📧 Worker assignment emails sent for complaint #{obj.id}")
+                
+                # Status changed
+                if old_status and old_status != obj.status:
+                    if send_status_update_email(obj, old_status, obj.status, request.user):
+                        messages.success(request, f"📧 Status update email sent for complaint #{obj.id}")
+        except Exception as e:
+            messages.warning(request, f"⚠️ Could not send email notification: {str(e)}")
 
     @admin.action(description="Mark selected as Resolved")
     def mark_resolved(self, request, queryset):
-        queryset.update(status="resolved")
+        count = 0
+        for complaint in queryset:
+            old_status = complaint.status
+            complaint.status = "resolved"
+            complaint.save()
+            count += 1
+            try:
+                send_status_update_email(complaint, old_status, "resolved", request.user)
+            except Exception:
+                pass
+        messages.success(request, f"✅ {count} complaint(s) marked as resolved. Email notifications sent.")
 
     @admin.action(description="Mark selected as In Progress")
     def mark_in_progress(self, request, queryset):
-        queryset.update(status="in_progress")
+        count = 0
+        for complaint in queryset:
+            old_status = complaint.status
+            complaint.status = "in_progress"
+            complaint.save()
+            count += 1
+            try:
+                send_status_update_email(complaint, old_status, "in_progress", request.user)
+            except Exception:
+                pass
+        messages.success(request, f"🔄 {count} complaint(s) marked as in progress. Email notifications sent.")
 
     @admin.action(description="Escalate to Senior Officer")
     def escalate_to_senior(self, request, queryset):
+        count = 0
         for complaint in queryset:
             complaint.status = "escalated"
             complaint.priority = 3
             complaint.save()
+            count += 1
             if hasattr(request.user, 'officer'):
-                ComplaintEscalation.objects.create(
+                escalation = ComplaintEscalation.objects.create(
                     complaint=complaint,
                     escalated_from=request.user.officer,
                     reason="Bulk escalation by officer"
                 )
+                try:
+                    send_escalation_email(complaint, escalation)
+                except Exception:
+                    pass
+        messages.success(request, f"⚠️ {count} complaint(s) escalated. Notifications sent to senior officers.")
 
 
 # -----------------------------

@@ -67,7 +67,7 @@ ROOT_URLCONF = "municipal.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -177,29 +177,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 JAZZMIN_SETTINGS = {
     # Title
     "site_title": "Municipal Admin",
-    "site_header": "Municipal Governance",
+    "site_header": "🏛️ Municipal Governance",
     "site_brand": "Civic Saathi",
     "welcome_sign": "Welcome to Municipal Governance Portal",
     "copyright": "Municipal Corporation",
 
-    # Logo (optional - add your logo to static/img/)
-    # "site_logo": "img/logo.png",
+    # Search models from sidebar
+    "search_model": ["civic_saathi.Complaint", "civic_saathi.Worker", "civic_saathi.Streetlight"],
 
     # User avatar
     "user_avatar": None,
 
     # Top Menu Links
     "topmenu_links": [
-        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Dashboard", "url": "admin:index"},
-        {"app": "civic_saathi"},
+        {"name": "🏠 Home", "url": "admin:index"},
+        {"name": "📊 Complaints", "url": "admin:civic_saathi_complaint_changelist"},
+        {"name": "👷 Workers", "url": "admin:civic_saathi_worker_changelist"},
+        {"name": "📋 Attendance", "url": "admin:civic_saathi_workerattendance_changelist"},
     ],
 
-    # Sidebar
+    # Sidebar - ORGANIZED BY FUNCTION
     "show_sidebar": True,
     "navigation_expanded": True,
-    "hide_apps": [],
-    "hide_models": [],
+    "hide_apps": ["auth"],  # Hide auth, we'll add it manually
+    "hide_models": ["civic_saathi.Assignment", "civic_saathi.ComplaintLog"],
 
     # Custom icons for apps/models
     "icons": {
@@ -221,31 +222,50 @@ JAZZMIN_SETTINGS = {
         "civic_saathi.Streetlight": "fas fa-lightbulb",
     },
 
-    # Model ordering within app
+    # Model ordering - GROUPED LOGICALLY
     "order_with_respect_to": [
         "civic_saathi",
+        # Complaints Section
         "civic_saathi.Complaint",
         "civic_saathi.ComplaintEscalation",
+        "civic_saathi.ComplaintCategory",
+        "civic_saathi.SLAConfig",
+        # People Section  
+        "civic_saathi.Officer",
+        "civic_saathi.Worker",
         "civic_saathi.WorkerAttendance",
+        # Assets Section
         "civic_saathi.Facility",
         "civic_saathi.FacilityInspection",
         "civic_saathi.Streetlight",
+        # Admin Section
         "civic_saathi.Department",
-        "civic_saathi.Officer",
-        "civic_saathi.Worker",
-        "civic_saathi.ComplaintCategory",
-        "civic_saathi.SLAConfig",
         "auth",
     ],
 
-    # Custom Links in sidebar
+    # Custom sidebar links - TREE STRUCTURE
     "custom_links": {
         "civic_saathi": [
             {
-                "name": "Overdue Complaints",
-                "url": "admin:civic_saathi_complaint_changelist",
-                "icon": "fas fa-fire",
-                "permissions": ["civic_saathi.view_complaint"]
+                "name": "📊 Dashboard Overview",
+                "url": "admin:index",
+                "icon": "fas fa-tachometer-alt",
+            },
+            {
+                "name": "🔥 Overdue (SLA Breach)",
+                "url": "admin:civic_saathi_complaint_changelist?status__exact=pending",
+                "icon": "fas fa-fire text-danger",
+            },
+            {
+                "name": "⚡ Escalated Issues",
+                "url": "admin:civic_saathi_complaintescalation_changelist",
+                "icon": "fas fa-arrow-up text-warning",
+            },
+            {
+                "name": "👤 User Management",
+                "url": "admin:auth_user_changelist",
+                "icon": "fas fa-users-cog",
+                "permissions": ["auth.view_user"]
             },
         ]
     },
@@ -258,11 +278,12 @@ JAZZMIN_SETTINGS = {
     "custom_js": None,
     "show_ui_builder": False,
 
-    # Change view
+    # Change view - Horizontal tabs for better organization
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
         "auth.user": "collapsible",
         "civic_saathi.complaint": "horizontal_tabs",
+        "civic_saathi.facility": "horizontal_tabs",
     },
 }
 
@@ -298,4 +319,30 @@ JAZZMIN_UI_TWEAKS = {
     },
     "actions_sticky_top": True,
 }
+
+
+# ========================================
+# EMAIL CONFIGURATION
+# ========================================
+# Using Gmail SMTP
+# 
+# IMPORTANT: Gmail requires "App Password" instead of regular password!
+# Steps to generate App Password:
+# 1. Go to https://myaccount.google.com/security
+# 2. Enable 2-Step Verification (if not already)
+# 3. Go to "App passwords" (search in security settings)
+# 4. Generate a new app password for "Mail" and "Windows Computer"
+# 5. Use that 16-character password below (or in EMAIL_HOST_PASSWORD env var)
+#
+# For development/testing, uncomment the console backend line below:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'akshatjain1678@gmail.com')
+# Replace 'arya@123' with your Gmail App Password (16 chars, no spaces)
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'onorxjsblaozjbte')  # App Password
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Municipal Portal <akshatjain1678@gmail.com>')
 

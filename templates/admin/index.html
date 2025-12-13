@@ -1,0 +1,385 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .dashboard-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .dashboard-card.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .dashboard-card.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .dashboard-card.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .dashboard-card.red { background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%); }
+    .dashboard-card h3 { margin: 0; font-size: 2.5rem; }
+    .dashboard-card p { margin: 5px 0 0 0; opacity: 0.9; }
+    
+    /* Department Flow Section */
+    .dept-flow-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        margin: 20px 0;
+    }
+    .dept-flow-section h4 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+    }
+    
+    /* Flow Tree Styles */
+    .flow-tree {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        position: relative;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid #3498db;
+    }
+    
+    .flow-level {
+        display: flex;
+        align-items: flex-start;
+        position: relative;
+        padding: 15px 0;
+    }
+    
+    .flow-level::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(to bottom, #3498db, #2ecc71);
+    }
+    
+    .flow-level:last-child::before {
+        display: none;
+    }
+    
+    .level-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        z-index: 2;
+        flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    .level-icon.pending { background: #f39c12; }
+    .level-icon.officer { background: #9b59b6; }
+    .level-icon.worker { background: #e67e22; }
+    .level-icon.resolved { background: #27ae60; }
+    .level-icon.escalated { background: #e74c3c; }
+    
+    .level-content {
+        margin-left: 15px;
+        flex-grow: 1;
+    }
+    
+    .level-title {
+        font-weight: bold;
+        color: #2c3e50;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .complaint-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .complaint-chip {
+        background: #ecf0f1;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 11px;
+        color: #2c3e50;
+        border: 1px solid #bdc3c7;
+        cursor: pointer;
+        transition: all 0.2s;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .complaint-chip:hover {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+    .complaint-chip.critical {
+        background: #ffebee;
+        border-color: #e74c3c;
+        color: #c0392b;
+    }
+    .complaint-chip.critical:hover {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .empty-level {
+        color: #95a5a6;
+        font-style: italic;
+        font-size: 12px;
+    }
+    
+    .count-badge {
+        background: #e74c3c;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        margin-left: 8px;
+    }
+    
+    .dept-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px dashed #ddd;
+    }
+    .dept-header h5 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .dept-icon {
+        font-size: 24px;
+    }
+    
+    .arrow-down {
+        text-align: center;
+        color: #bdc3c7;
+        font-size: 20px;
+        margin: 5px 0;
+    }
+    
+    /* Summary boxes */
+    .summary-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 5px;
+        font-size: 13px;
+    }
+    .summary-label {
+        color: #7f8c8d;
+        min-width: 100px;
+    }
+    .summary-value {
+        font-weight: bold;
+    }
+    .summary-value.danger { color: #e74c3c; }
+    .summary-value.warning { color: #f39c12; }
+    .summary-value.success { color: #27ae60; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Quick Stats -->
+    <div class="col-md-3">
+        <div class="dashboard-card">
+            <h3>{{ total_complaints|default:"--" }}</h3>
+            <p>📋 Total Complaints</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dashboard-card orange">
+            <h3>{{ pending_complaints|default:"--" }}</h3>
+            <p>⏳ Pending Issues</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dashboard-card green">
+            <h3>{{ resolved_complaints|default:"--" }}</h3>
+            <p>✅ Resolved Today</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dashboard-card red">
+            <h3>{{ overdue_complaints|default:"--" }}</h3>
+            <p>🔥 SLA Breached</p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row" style="margin-bottom: 20px;">
+    <div class="col-12">
+        <div style="background: white; padding: 15px; border-radius: 10px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <span style="font-weight: bold; color: #2c3e50;">⚡ Quick Actions:</span>
+            
+            <a href="{% url 'mark_attendance' %}" class="button" style="background: #3498db; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <span>📋</span> Mark Daily Attendance
+            </a>
+            
+            <a href="/admin/civic_saathi/complaint/add/" class="button" style="background: #2ecc71; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <span>➕</span> New Complaint
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Complaint Flow Trees by Department -->
+<div class="dept-flow-section">
+    <h4>📊 Complaint Pipeline - Where is each complaint right now?</h4>
+    <p style="color: #7f8c8d; margin-bottom: 20px;">
+        See complaints flowing through the system. Click any complaint to view details.
+    </p>
+    
+    <div class="row">
+        {% for dept in dept_flows %}
+        <div class="col-md-6 col-lg-4">
+            <div class="flow-tree">
+                <div class="dept-header">
+                    <span class="dept-icon">{{ dept.icon }}</span>
+                    <h5>{{ dept.name }}</h5>
+                </div>
+                
+                <!-- Level 1: New/Pending (At Officer) -->
+                <div class="flow-level">
+                    <div class="level-icon pending">📥</div>
+                    <div class="level-content">
+                        <div class="level-title">
+                            📋 New / Pending 
+                            {% if dept.pending_count %}<span class="count-badge">{{ dept.pending_count }}</span>{% endif %}
+                        </div>
+                        <div class="complaint-chips">
+                            {% for c in dept.pending_complaints %}
+                            <a href="/admin/civic_saathi/complaint/{{ c.id }}/change/" class="complaint-chip {% if c.priority == 3 %}critical{% endif %}">
+                                #{{ c.id }} {{ c.title|truncatechars:25 }}
+                            </a>
+                            {% empty %}
+                            <span class="empty-level">No pending complaints ✓</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="arrow-down">↓</div>
+                
+                <!-- Level 2: With Officer (Assigned, reviewing) -->
+                <div class="flow-level">
+                    <div class="level-icon officer">👔</div>
+                    <div class="level-content">
+                        <div class="level-title">
+                            👔 With Officer 
+                            {% if dept.at_officer_count %}<span class="count-badge">{{ dept.at_officer_count }}</span>{% endif %}
+                        </div>
+                        <div class="complaint-chips">
+                            {% for c in dept.at_officer_complaints %}
+                            <a href="/admin/civic_saathi/complaint/{{ c.id }}/change/" class="complaint-chip {% if c.priority == 3 %}critical{% endif %}">
+                                #{{ c.id }} {{ c.title|truncatechars:25 }}
+                            </a>
+                            {% empty %}
+                            <span class="empty-level">None with officers</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="arrow-down">↓</div>
+                
+                <!-- Level 3: With Worker (In Progress) -->
+                <div class="flow-level">
+                    <div class="level-icon worker">👷</div>
+                    <div class="level-content">
+                        <div class="level-title">
+                            👷 With Worker 
+                            {% if dept.at_worker_count %}<span class="count-badge">{{ dept.at_worker_count }}</span>{% endif %}
+                        </div>
+                        <div class="complaint-chips">
+                            {% for c in dept.at_worker_complaints %}
+                            <a href="/admin/civic_saathi/complaint/{{ c.id }}/change/" class="complaint-chip {% if c.priority == 3 %}critical{% endif %}">
+                                #{{ c.id }} {{ c.title|truncatechars:25 }} → {{ c.worker_name }}
+                            </a>
+                            {% empty %}
+                            <span class="empty-level">No active work</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="arrow-down">↓</div>
+                
+                <!-- Level 4: Resolved -->
+                <div class="flow-level">
+                    <div class="level-icon resolved">✅</div>
+                    <div class="level-content">
+                        <div class="level-title">
+                            ✅ Resolved (Today) 
+                            {% if dept.resolved_count %}<span class="count-badge" style="background:#27ae60">{{ dept.resolved_count }}</span>{% endif %}
+                        </div>
+                        <div class="complaint-chips">
+                            {% for c in dept.resolved_complaints %}
+                            <a href="/admin/civic_saathi/complaint/{{ c.id }}/change/" class="complaint-chip" style="background:#d5f5e3; border-color:#27ae60;">
+                                #{{ c.id }} {{ c.title|truncatechars:25 }}
+                            </a>
+                            {% empty %}
+                            <span class="empty-level">None resolved today</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Escalated (Side branch) -->
+                {% if dept.escalated_complaints %}
+                <div class="flow-level" style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #e74c3c;">
+                    <div class="level-icon escalated">🔥</div>
+                    <div class="level-content">
+                        <div class="level-title" style="color: #e74c3c;">
+                            🔥 ESCALATED 
+                            <span class="count-badge">{{ dept.escalated_count }}</span>
+                        </div>
+                        <div class="complaint-chips">
+                            {% for c in dept.escalated_complaints %}
+                            <a href="/admin/civic_saathi/complaint/{{ c.id }}/change/" class="complaint-chip critical">
+                                #{{ c.id }} {{ c.title|truncatechars:25 }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Department Summary -->
+                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; font-size: 12px;">
+                    <div class="summary-row">
+                        <span class="summary-label">Total Open:</span>
+                        <span class="summary-value warning">{{ dept.total_open }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">SLA Breached:</span>
+                        <span class="summary-value danger">{{ dept.sla_breached }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p style="text-align: center; color: #95a5a6;">Loading department data...</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Original Admin Content -->
+{{ block.super }}
+{% endblock %}
