@@ -1,12 +1,35 @@
 from django.contrib import admin
-
 from .models import (
     Department, Officer, Worker,
     Complaint, ComplaintLog, Assignment
 )
 
-admin.site.site_header = "Municipal Admin Panel"
+admin.site.site_header = "Municipal Governance Panel"
 admin.site.site_title = "Municipal Admin"
+
+
+# -----------------------------
+# Inline Logs (READ-ONLY)
+# -----------------------------
+class ComplaintLogInline(admin.TabularInline):
+    model = ComplaintLog
+    extra = 0
+    can_delete = False
+    readonly_fields = (
+        "action_by", "note",
+        "old_status", "new_status",
+        "old_dept", "new_dept",
+        "timestamp"
+    )
+
+
+# -----------------------------
+# Inline Assignments
+# -----------------------------
+class AssignmentInline(admin.TabularInline):
+    model = Assignment
+    extra = 0
+    readonly_fields = ("assigned_by_officer", "timestamp")
 
 
 # -----------------------------
@@ -14,7 +37,7 @@ admin.site.site_title = "Municipal Admin"
 # -----------------------------
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
+    list_display = ("name", "description")
     search_fields = ("name",)
 
 
@@ -23,9 +46,9 @@ class DepartmentAdmin(admin.ModelAdmin):
 # -----------------------------
 @admin.register(Officer)
 class OfficerAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "department", "role")
+    list_display = ("user", "department", "role")
     list_filter = ("department", "role")
-    search_fields = ("user__username", "user__first_name", "user__last_name")
+    search_fields = ("user__username",)
 
 
 # -----------------------------
@@ -33,49 +56,65 @@ class OfficerAdmin(admin.ModelAdmin):
 # -----------------------------
 @admin.register(Worker)
 class WorkerAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "department", "role", "is_active", "joining_date")
+    list_display = ("user", "department", "role", "is_active")
     list_filter = ("department", "role", "is_active")
-    search_fields = ("user__username", "role")
+    search_fields = ("user__username",)
 
 
 # -----------------------------
-# Complaint
+# Complaint (CORE VIEW)
 # -----------------------------
 @admin.register(Complaint)
 class ComplaintAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "title", "user", "department",
-        "status", "current_officer", "current_worker",
-        "created_at", "updated_at"
+        "id", "title", "department",
+        "priority", "status",
+        "current_worker", "created_at"
     )
-    list_filter = ("department", "status")
+
+    list_filter = (
+        "department", "status",
+        "priority", "is_deleted", "is_spam"
+    )
+
     search_fields = ("title", "description", "user__username")
-    list_per_page = 20
 
+    ordering = ("-priority", "-created_at")
 
-# -----------------------------
-# Assignment (History)
-# -----------------------------
-@admin.register(Assignment)
-class AssignmentAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "complaint", "assigned_to_worker",
-        "assigned_by_officer", "status", "timestamp"
+    inlines = [AssignmentInline, ComplaintLogInline]
+
+    list_per_page = 25
+
+    fieldsets = (
+        ("Complaint Info", {
+            "fields": ("user", "title", "description", "location", "image")
+        }),
+        ("Routing & Priority", {
+            "fields": ("department", "priority", "status")
+        }),
+        ("Assignment", {
+            "fields": ("current_officer", "current_worker")
+        }),
+        ("Flags", {
+            "fields": ("is_deleted", "is_spam")
+        }),
     )
-    list_filter = ("status", "assigned_by_officer", "assigned_to_worker")
-    search_fields = ("complaint__title",)
+
+    # 🔐 Department-wise admin visibility
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        try:
+            return qs.filter(department=request.user.officer.department)
+        except:
+            return qs.none()
 
 
 # -----------------------------
-# Complaint Logs (Blockchain-like)
+# Hide raw logs from main menu
 # -----------------------------
 @admin.register(ComplaintLog)
 class ComplaintLogAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "complaint", "action_by", "note",
-        "old_status", "new_status", "old_dept",
-        "new_dept", "timestamp"
-    )
-    list_filter = ("new_status", "new_dept")
-    search_fields = ("complaint__title", "action_by__username")
-    list_per_page = 30
+    def has_module_permission(self, request):
+        return False
