@@ -1,1 +1,1 @@
-web: python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn municipal.wsgi --bind 0.0.0.0:$PORT
+web: python manage.py migrate --noinput && gunicorn municipal.wsgi --bind 0.0.0.0:$PORT
