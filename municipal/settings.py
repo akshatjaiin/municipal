@@ -205,19 +205,21 @@ WSGI_APPLICATION = "municipal.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("PGDATABASE", "postgres"),
-        "USER": os.environ.get("PGUSER", "postgres"),
-        "PASSWORD": os.environ.get("PGPASSWORD", "password"),
-        "HOST": os.environ.get("PGHOST", "localhost"),
-        "PORT": os.environ.get("PGPORT", "5432"),
+        "NAME": "postgres",
+        "USER": "postgres.rykvyvhbwdcimgaydefu",
+        "PASSWORD": "iMKMsxxW2Sc4Vk2Q",
+        "HOST": "aws-1-ap-southeast-1.pooler.supabase.com",
+        "PORT": "5432",
         "OPTIONS": {
-            "sslmode": os.environ.get("PGSSLMODE", "require"),
+            "sslmode": "require",
         },
     }
 }
+
 
 
 
