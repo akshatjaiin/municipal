@@ -4,3 +4,6 @@ Faker>=19.0
 django-jazzmin
 psycopg[binary]
 Pillow
+django-extensions
+pyopenssl
+gunicorn

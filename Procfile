@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py runserver 0.0.0.0:$PORT
+web: bash deploy.sh && gunicorn municipal.wsgi --bind 0.0.0.0:$PORT
