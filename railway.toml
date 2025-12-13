@@ -2,7 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "bash deploy.sh && python manage.py runserver 0.0.0.0:$PORT"
+startCommand = "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn municipal.wsgi --bind 0.0.0.0:$PORT"
 healthcheckPath = "/admin/"
 restartPolicyType = "ON_FAILURE"
 
@@ -11,5 +11,4 @@ PYTHON_VERSION = "3.11"
 
 [deploy.env]
 DEBUG = "False"
-SECRET_KEY = "your-production-secret-key-here"
 ALLOWED_HOSTS = "*"
