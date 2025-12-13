@@ -85,20 +85,31 @@ WSGI_APPLICATION = "municipal.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("PGDATABASE", "postgres"),
-        "USER": os.environ.get("PGUSER", "postgres"),
-        "PASSWORD": os.environ.get("PGPASSWORD", ""),
-        "HOST": os.environ.get("PGHOST", "localhost"),
-        "PORT": os.environ.get("PGPORT", "5432"),
-        "OPTIONS": {
-            "sslmode": os.environ.get("PGSSLMODE", "allow"),
-        },
-        "CONN_MAX_AGE": 600,
+# Railway provides DATABASE_URL, but also individual PG* vars
+import dj_database_url
+
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.environ.get("DATABASE_URL"),
+            conn_max_age=600,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("PGDATABASE", os.environ.get("POSTGRES_DB", "railway")),
+            "USER": os.environ.get("PGUSER", os.environ.get("POSTGRES_USER", "postgres")),
+            "PASSWORD": os.environ.get("PGPASSWORD", os.environ.get("POSTGRES_PASSWORD", "")),
+            "HOST": os.environ.get("PGHOST", os.environ.get("RAILWAY_PRIVATE_DOMAIN", "localhost")),
+            "PORT": os.environ.get("PGPORT", "5432"),
+            "OPTIONS": {
+                "sslmode": os.environ.get("PGSSLMODE", "allow"),
+            },
+            "CONN_MAX_AGE": 600,
+        }
+    }
 
 
 
