@@ -2,6 +2,36 @@
 
 A Django project for managing civic complaints and workflows. It includes a `civic_saathi` app with REST APIs, admin, and demo data loader.
 
+## Railway Deployment
+
+### 1. Prerequisites
+- Railway account
+- Git repository
+
+### 2. Deploy to Railway
+1. Connect your GitHub repository to Railway
+2. Railway will auto-detect the Django app
+3. Set environment variables in Railway dashboard:
+   ```
+   DEBUG=False
+   SECRET_KEY=your-super-secret-key-here
+   ALLOWED_HOSTS=*
+   ```
+4. Railway will provide database credentials automatically
+
+### 3. Post-Deployment Setup
+The `deploy.sh` script will:
+- Run migrations
+- Create a superuser (admin/admin123)
+- Collect static files
+
+### 4. Access Admin Panel
+- URL: `https://your-app-name.railway.app/admin/`
+- Username: `admin`
+- Password: `admin123`
+
+**⚠️ Change the default password immediately!**
+
 ## Quick Start
 
 ### 1) Prerequisites

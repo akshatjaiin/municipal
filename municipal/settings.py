@@ -20,26 +20,155 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-&17c1m9pobb7yydwl$3hsn63ay#(#%bz#1znkg5rt!1kuotwmq"
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-&17c1m9pobb7yydwl$3hsn63ay#(#%bz#1znkg5rt!1kuotwmq")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+
+
+# ========================================
+# JAZZMIN ADMIN UI CONFIGURATION
+# ========================================
+JAZZMIN_SETTINGS = {
+    # Title
+    "site_title": "Municipal Admin",
+    "site_header": "Municipal Governance",
+    "site_brand": "Civic Saathi",
+    "welcome_sign": "Welcome to Municipal Governance Portal",
+    "copyright": "Municipal Corporation",
+
+    # Logo (optional - add your logo to static/img/)
+    # "site_logo": "img/logo.png",
+
+    # User avatar
+    "user_avatar": None,
+
+    # Top Menu Links
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Dashboard", "url": "admin:index"},
+        {"app": "civic_saathi"},
+    ],
+
+    # Sidebar
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+
+    # Custom icons for apps/models
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "civic_saathi.Department": "fas fa-building",
+        "civic_saathi.Officer": "fas fa-user-tie",
+        "civic_saathi.Worker": "fas fa-hard-hat",
+        "civic_saathi.Complaint": "fas fa-exclamation-triangle",
+        "civic_saathi.ComplaintCategory": "fas fa-tags",
+        "civic_saathi.ComplaintLog": "fas fa-history",
+        "civic_saathi.ComplaintEscalation": "fas fa-level-up-alt",
+        "civic_saathi.Assignment": "fas fa-tasks",
+        "civic_saathi.WorkerAttendance": "fas fa-calendar-check",
+        "civic_saathi.Facility": "fas fa-restroom",
+        "civic_saathi.FacilityInspection": "fas fa-clipboard-check",
+        "civic_saathi.SLAConfig": "fas fa-clock",
+        "civic_saathi.Streetlight": "fas fa-lightbulb",
+    },
+
+    # Model ordering within app
+    "order_with_respect_to": [
+        "civic_saathi",
+        "civic_saathi.Complaint",
+        "civic_saathi.ComplaintEscalation",
+        "civic_saathi.WorkerAttendance",
+        "civic_saathi.Facility",
+        "civic_saathi.FacilityInspection",
+        "civic_saathi.Streetlight",
+        "civic_saathi.Department",
+        "civic_saathi.Officer",
+        "civic_saathi.Worker",
+        "civic_saathi.ComplaintCategory",
+        "civic_saathi.SLAConfig",
+        "auth",
+    ],
+
+    # Custom Links in sidebar
+    "custom_links": {
+        "civic_saathi": [
+            {
+                "name": "Overdue Complaints",
+                "url": "admin:civic_saathi_complaint_changelist",
+                "icon": "fas fa-fire",
+                "permissions": ["civic_saathi.view_complaint"]
+            },
+        ]
+    },
+
+    # Related Modal
+    "related_modal_active": True,
+
+    # UI Tweaks
+    "custom_css": None,
+    "custom_js": None,
+    "show_ui_builder": False,
+
+    # Change view
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "civic_saathi.complaint": "horizontal_tabs",
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-success",
+    "accent": "accent-teal",
+    "navbar": "navbar-dark navbar-success",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-success",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    },
+    "actions_sticky_top": True,
+}
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "civic_saathi",
-    'jazzmin',
+    'jazzmin',  # Must be before django.contrib.admin
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "rest_framework",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "civic_saathi",
 ]
 
 MIDDLEWARE = [
@@ -79,13 +208,13 @@ WSGI_APPLICATION = "municipal.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres",
-        "USER": "postgres.rykvyvhbwdcimgaydefu",
-        "PASSWORD": "iMKMsxxW2Sc4Vk2Q",
-        "HOST": "aws-1-ap-southeast-1.pooler.supabase.com",
-        "PORT": "5432",
+        "NAME": os.environ.get("PGDATABASE", "postgres"),
+        "USER": os.environ.get("PGUSER", "postgres"),
+        "PASSWORD": os.environ.get("PGPASSWORD", "password"),
+        "HOST": os.environ.get("PGHOST", "localhost"),
+        "PORT": os.environ.get("PGPORT", "5432"),
         "OPTIONS": {
-            "sslmode": "require",
+            "sslmode": os.environ.get("PGSSLMODE", "require"),
         },
     }
 }
@@ -127,8 +256,54 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ========================================
+# PRODUCTION SETTINGS
+# ========================================
+
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+    # HSTS (uncomment when SSL is properly configured)
+    # SECURE_HSTS_SECONDS = 31536000
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD = True
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
