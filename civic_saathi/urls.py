@@ -1,5 +1,8 @@
 from django.urls import path
 from .views import (
+    # Home Page
+    home_view,
+    
     # Complaint Views
     ComplaintCreateView,
     MyComplaintsView,
@@ -29,6 +32,11 @@ from .views import (
 )
 
 urlpatterns = [
+    # ========================
+    # Home Page
+    # ========================
+    path("", home_view, name="home"),
+    
     # ========================
     # Authentication Routes
     # ========================

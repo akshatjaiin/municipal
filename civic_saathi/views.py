@@ -28,6 +28,21 @@ import string
 
 
 # ========================
+# Home Page View
+# ========================
+
+def home_view(request):
+    """Render the beautiful home page with stats"""
+    context = {
+        'total_complaints': Complaint.objects.count(),
+        'total_users': User.objects.filter(is_active=True).count(),
+        'total_facilities': Facility.objects.count(),
+        'resolved_complaints': Complaint.objects.filter(status='resolved').count(),
+    }
+    return render(request, 'home.html', context)
+
+
+# ========================
 # OTP Storage (In production, use Redis or DB)
 # ========================
 otp_storage = {}

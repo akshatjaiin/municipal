@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicSaathi - Smart Municipal Governance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --primary-dark: #e55555;
+            --secondary: #FFE5E5;
+            --accent: #FF8E8E;
+            --background: #FFF5F5;
+            --card: #FFFFFF;
+            --text-primary: #2D2D2D;
+            --text-secondary: #666666;
+            --success: #4CAF50;
+            --warning: #FFB74D;
+            --error: #F44336;
+            --gradient: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 50%, #FFB4B4 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--gradient);
+            opacity: 0.1;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .bg-animation .circle:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-animation .circle:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            left: -50px;
+            animation-delay: 2s;
+        }
+
+        .bg-animation .circle:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(255, 107, 107, 0.1);
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(255, 107, 107, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 2rem 80px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero-content {
+            flex: 1;
+            padding-right: 4rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--secondary);
+            padding: 8px 16px;
+            border-radius: 50px;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .hero-badge i {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.6s ease 0.1s backwards;
+        }
+
+        .hero h1 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease 0.2s backwards;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            animation: fadeInUp 0.6s ease 0.3s backwards;
+        }
+
+        .hero-visual {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fadeInRight 0.8s ease;
+        }
+
+        .hero-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(255, 107, 107, 0.15);
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient);
+        }
+
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .api-endpoint {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .api-endpoint:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.1);
+        }
+
+        .api-method {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .api-method.get { background: #E3F2FD; color: #1976D2; }
+        .api-method.post { background: #E8F5E9; color: #388E3C; }
+
+        .api-path {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Stats Section */
+        .stats {
+            background: white;
+            padding: 4rem 2rem;
+        }
+
+        .stats-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 20px;
+            background: var(--background);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.1);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(255, 107, 107, 0.15);
+        }
+
+        .feature-card:hover::before {
+            opacity: 0.03;
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--secondary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.8rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* API Section */
+        .api-section {
+            background: white;
+            padding: 6rem 2rem;
+        }
+
+        .api-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .api-category {
+            background: var(--background);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .api-category h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .api-category h3 i {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .api-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .api-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.75rem 1rem;
+            background: white;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .api-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text-primary);
+            color: white;
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            padding-bottom: 3rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-brand .logo-text {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: var(--gradient);
+            transform: translateY(-3px);
+        }
+
+        .footer-links h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 100px;
+            }
+
+            .hero-content {
+                padding-right: 0;
+                margin-bottom: 3rem;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .api-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+
+        /* Mobile menu button */
+        .mobile-menu {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="/" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-city"></i>
+                </div>
+                <span class="logo-text">CivicSaathi</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#api">API Docs</a>
+                <a href="/admin/">Admin Panel</a>
+                <a href="/admin/" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            </div>
+            <button class="mobile-menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-bolt"></i>
+                Smart Municipal Governance Platform
+            </div>
+            <h1>
+                Transform Your City with <span>CivicSaathi</span>
+            </h1>
+            <p>
+                A unified digital platform connecting citizens with municipal authorities. 
+                Report issues, track resolutions, and ensure accountability for a cleaner, 
+                safer city. Powered by modern REST APIs.
+            </p>
+            <div class="hero-buttons">
+                <a href="/admin/" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i> Admin Dashboard
+                </a>
+                <a href="#api" class="btn btn-outline">
+                    <i class="fas fa-book"></i> API Documentation
+                </a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-card">
+                <div class="api-status">
+                    <div class="status-dot"></div>
+                    <span style="font-weight: 600; color: var(--success);">API Server Online</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/auth/login/</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method post">POST</span>
+                    <span class="api-path">/complaints/create/</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/facilities/</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method get">GET</span>
+                    <span class="api-path">/categories/</span>
+                </div>
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--secondary); border-radius: 12px;">
+                    <code style="font-size: 0.85rem; color: var(--primary);">
+                        ✓ Token Authentication<br>
+                        ✓ RESTful Endpoints<br>
+                        ✓ CORS Enabled
+                    </code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="stat-number">{{ total_complaints }}</div>
+                <div class="stat-label">Total Complaints</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number">{{ total_users }}</div>
+                <div class="stat-label">Registered Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="stat-number">{{ total_facilities }}</div>
+                <div class="stat-label">Public Facilities</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-number">{{ resolved_complaints }}</div>
+                <div class="stat-label">Resolved Issues</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>Powerful <span>Features</span></h2>
+            <p>Everything you need for efficient municipal governance in one unified platform</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <h3>Location-Based Reporting</h3>
+                <p>Citizens can report issues with precise GPS coordinates and photo evidence for accurate documentation and faster response.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3>Smart Routing</h3>
+                <p>Automatic assignment of complaints to relevant departments based on category - sanitation, roads, electrical, and more.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3>Real-Time Tracking</h3>
+                <p>Track complaint status from submission to resolution with detailed timeline logs and status updates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3>Officer Management</h3>
+                <p>Assign officers, track performance metrics, and manage escalation workflows for efficient resolution.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3>Facility Ratings</h3>
+                <p>Citizens can rate public facilities like toilets, parks, and government buildings for quality monitoring.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <h3>Attendance Tracking</h3>
+                <p>Monitor worker attendance with check-in/check-out system and location verification.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Section -->
+    <section class="api-section" id="api">
+        <div class="api-container">
+            <div class="section-header">
+                <h2>REST <span>API</span> Endpoints</h2>
+                <p>Well-documented APIs for seamless integration with mobile and web applications</p>
+            </div>
+            <div class="api-grid">
+                <div class="api-category">
+                    <h3>
+                        <i class="fas fa-key"></i>
+                        Authentication
+                    </h3>
+                    <div class="api-list">
+                        <div class="api-item">
+                            <span class="api-method post">POST</span>
+                            <span class="api-path">/auth/register/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method post">POST</span>
+                            <span class="api-path">/auth/login/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method post">POST</span>
+                            <span class="api-path">/auth/logout/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/auth/profile/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method post">POST</span>
+                            <span class="api-path">/auth/change-password/</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="api-category">
+                    <h3>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Complaints
+                    </h3>
+                    <div class="api-list">
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/complaints/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method post">POST</span>
+                            <span class="api-path">/complaints/create/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/complaints/&lt;id&gt;/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/complaints/&lt;id&gt;/logs/</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="api-category">
+                    <h3>
+                        <i class="fas fa-building"></i>
+                        Facilities
+                    </h3>
+                    <div class="api-list">
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/facilities/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/facilities/nearby/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/facilities/&lt;id&gt;/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method post">POST</span>
+                            <span class="api-path">/facilities/&lt;id&gt;/rate/</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="api-category">
+                    <h3>
+                        <i class="fas fa-folder"></i>
+                        Categories & Departments
+                    </h3>
+                    <div class="api-list">
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/categories/</span>
+                        </div>
+                        <div class="api-item">
+                            <span class="api-method get">GET</span>
+                            <span class="api-path">/departments/</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-text">CivicSaathi</div>
+                <p>
+                    Empowering citizens and municipalities to build cleaner, 
+                    safer, and more accountable cities through technology.
+                </p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#api">API Docs</a></li>
+                    <li><a href="/admin/">Admin Panel</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">Support</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:support@civicsaathi.com">support@civicsaathi.com</a></li>
+                    <li><a href="#">Nagar Nigam Jaipur</a></li>
+                    <li><a href="#">Rajasthan, India</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 CivicSaathi. All rights reserved.</p>
+            <p>Built with ❤️ for Smart Cities</p>
+        </div>
+    </footer>
+</body>
+</html>
