@@ -123,39 +123,31 @@ WSGI_APPLICATION = "municipal.wsgi.application"
 # Use SQLite locally, PostgreSQL on Railway
 import dj_database_url
 
+# Get DATABASE_URL from environment
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# Check if we should use SQLite (only for local development)
 USE_SQLITE = os.environ.get("USE_SQLITE", "False").lower() in ("true", "1", "yes")
 
-if USE_SQLITE or not os.environ.get("DATABASE_URL"):
-    # Local development with SQLite
+# Default PostgreSQL URL for Railway (fallback if DATABASE_URL not set)
+DEFAULT_POSTGRES_URL = "postgresql://postgres:QaOgyiLTAhAUafZCSnXrKQBEsIdbQKxs@caboose.proxy.rlwy.net:28112/railway"
+
+if USE_SQLITE:
+    # Explicitly requested SQLite (local development)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
-elif os.environ.get("DATABASE_URL"):
-    # Railway production with PostgreSQL
+else:
+    # Use PostgreSQL - either from DATABASE_URL or default Railway URL
+    db_url = DATABASE_URL or DEFAULT_POSTGRES_URL
     DATABASES = {
         "default": dj_database_url.config(
-            default=os.environ.get("DATABASE_URL"),
+            default=db_url,
             conn_max_age=600,
         )
-    }
-else:
-    # Fallback PostgreSQL config
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("PGDATABASE", "railway"),
-            "USER": os.environ.get("PGUSER", "postgres"),
-            "PASSWORD": os.environ.get("PGPASSWORD", ""),
-            "HOST": os.environ.get("PGHOST", os.environ.get("RAILWAY_PRIVATE_DOMAIN", "localhost")),
-            "PORT": os.environ.get("PGPORT", "5432"),
-            "OPTIONS": {
-                "sslmode": os.environ.get("PGSSLMODE", "allow"),
-            },
-            "CONN_MAX_AGE": 600,
-        }
     }
 
 
