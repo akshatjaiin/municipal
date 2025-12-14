@@ -7,7 +7,7 @@ from .models import (
     Department, Officer, Worker,
     Complaint, ComplaintLog, Assignment, ComplaintCategory,
     ComplaintEscalation, WorkerAttendance, Facility, FacilityInspection,
-    SLAConfig, Streetlight
+    SLAConfig, Streetlight, FacilityRating
 )
 # Email notification service
 from .email_service import (
@@ -154,14 +154,43 @@ class OfficerAdmin(admin.ModelAdmin):
 
 
 # -----------------------------
+# Worker Attendance Inline (for Worker detail view)
+# -----------------------------
+class WorkerAttendanceInline(admin.TabularInline):
+    model = WorkerAttendance
+    extra = 0
+    readonly_fields = ("date", "status", "check_in", "check_out", "marked_by")
+    can_delete = False
+    max_num = 30  # Show last 30 records
+    ordering = ["-date"]
+    
+    def has_add_permission(self, request, obj=None):
+        return False  # Add attendance from main attendance page
+    
+    verbose_name = "Attendance Record"
+    verbose_name_plural = "📅 Attendance History (Last 30 Days)"
+
+
+# -----------------------------
 # Worker
 # -----------------------------
 @admin.register(Worker)
 class WorkerAdmin(admin.ModelAdmin):
-    list_display = ("user", "department", "role", "is_active", "today_attendance", "active_tasks")
+    list_display = ("user", "department", "role", "is_active", "today_attendance", "active_tasks", "attendance_summary")
     list_filter = ("department", "role", "is_active")
     search_fields = ("user__username",)
     list_editable = ("is_active",)
+    inlines = [WorkerAttendanceInline]
+    
+    fieldsets = (
+        ("Basic Info", {
+            "fields": ("user", "department", "role", "is_active")
+        }),
+        ("Details", {
+            "fields": ("address", "joining_date"),
+            "classes": ("collapse",)
+        }),
+    )
 
     def today_attendance(self, obj):
         today = timezone.now().date()
@@ -175,6 +204,23 @@ class WorkerAdmin(admin.ModelAdmin):
     def active_tasks(self, obj):
         return obj.assigned_work.filter(status__in=["pending", "in_progress"]).count()
     active_tasks.short_description = "Tasks"
+    
+    def attendance_summary(self, obj):
+        """Show attendance stats for current month"""
+        from datetime import date
+        today = date.today()
+        first_day = today.replace(day=1)
+        records = obj.attendance_records.filter(date__gte=first_day, date__lte=today)
+        present = records.filter(status="present").count()
+        absent = records.filter(status="absent").count()
+        total = records.count()
+        if total == 0:
+            return "-"
+        return format_html(
+            '<span style="color: green;">✓{}</span> / <span style="color: red;">✗{}</span>',
+            present, absent
+        )
+    attendance_summary.short_description = "This Month"
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -468,13 +514,40 @@ class ComplaintEscalationAdmin(admin.ModelAdmin):
 
 
 # -----------------------------
+# Facility Rating Inline (show ratings on facility page)
+# -----------------------------
+class FacilityRatingInline(admin.TabularInline):
+    model = FacilityRating
+    extra = 0
+    readonly_fields = ("user", "cleanliness_rating", "comment", "created_at", "is_anonymous")
+    can_delete = True
+    max_num = 20
+    ordering = ["-created_at"]
+    
+    def has_add_permission(self, request, obj=None):
+        return False  # Citizens add ratings via API/frontend
+
+
+# -----------------------------
 # Facility Admin
 # -----------------------------
 @admin.register(Facility)
 class FacilityAdmin(DepartmentFilteredAdmin):
-    list_display = ("name", "facility_type", "department", "assigned_worker", "is_active", "last_inspection")
+    list_display = ("name", "facility_type", "department", "assigned_worker", "is_active", "public_rating", "last_inspection")
     list_filter = ("facility_type", "department", "is_active")
     search_fields = ("name", "address")
+    inlines = [FacilityRatingInline]
+
+    def public_rating(self, obj):
+        avg = obj.average_rating
+        total = obj.total_ratings
+        if avg is None:
+            return format_html('<span style="color: gray;">No ratings</span>')
+        stars = "★" * int(avg) + "☆" * (5 - int(avg))
+        colors = {1: "red", 2: "orange", 3: "gold", 4: "yellowgreen", 5: "green"}
+        color = colors.get(int(avg), "gray")
+        return format_html('<span style="color: {};">{}</span> <small>({} reviews)</small>', color, stars, total)
+    public_rating.short_description = "Public Rating"
 
     def last_inspection(self, obj):
         insp = obj.inspections.first()
@@ -485,7 +558,46 @@ class FacilityAdmin(DepartmentFilteredAdmin):
 
 
 # -----------------------------
-# Facility Inspection
+# Public Facility Rating Admin
+# -----------------------------
+@admin.register(FacilityRating)
+class FacilityRatingAdmin(admin.ModelAdmin):
+    list_display = ("facility", "rating_stars", "user_display", "comment_short", "created_at", "is_verified")
+    list_filter = ("cleanliness_rating", "is_verified", "is_anonymous", "facility__facility_type")
+    search_fields = ("facility__name", "comment")
+    date_hierarchy = "created_at"
+    list_editable = ("is_verified",)
+    readonly_fields = ("facility", "user", "cleanliness_rating", "comment", "photo", "created_at", "ip_address")
+    
+    def rating_stars(self, obj):
+        stars = "★" * obj.cleanliness_rating + "☆" * (5 - obj.cleanliness_rating)
+        colors = {1: "red", 2: "orange", 3: "gold", 4: "yellowgreen", 5: "green"}
+        return format_html('<span style="color: {};">{}</span>', colors.get(obj.cleanliness_rating, "gray"), stars)
+    rating_stars.short_description = "Rating"
+    
+    def user_display(self, obj):
+        if obj.is_anonymous:
+            return "Anonymous"
+        return obj.user.get_full_name() if obj.user else "Guest"
+    user_display.short_description = "Rated By"
+    
+    def comment_short(self, obj):
+        if obj.comment:
+            return obj.comment[:50] + "..." if len(obj.comment) > 50 else obj.comment
+        return "-"
+    comment_short.short_description = "Comment"
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        if hasattr(request.user, 'officer'):
+            return qs.filter(facility__department=request.user.officer.department)
+        return qs
+
+
+# -----------------------------
+# Facility Inspection (Staff)
 # -----------------------------
 @admin.register(FacilityInspection)
 class FacilityInspectionAdmin(admin.ModelAdmin):

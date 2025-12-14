@@ -61,9 +61,10 @@ class Complaint(models.Model):
     category = models.ForeignKey(
         ComplaintCategory,
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True  # Made optional - can file complaint without selecting category
     )
-
+    
     department = models.ForeignKey(
         Department,
         on_delete=models.SET_NULL,
@@ -248,10 +249,59 @@ class Facility(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_facility_type_display()})"
+    
+    @property
+    def average_rating(self):
+        """Get average cleanliness rating from public reviews"""
+        ratings = self.public_ratings.all()
+        if not ratings.exists():
+            return None
+        return round(sum(r.cleanliness_rating for r in ratings) / ratings.count(), 1)
+    
+    @property
+    def total_ratings(self):
+        return self.public_ratings.count()
 
 
 # -------------------------
-# Facility Inspection Log
+# Public Facility Rating (by Citizens)
+# -------------------------
+class FacilityRating(models.Model):
+    """
+    Citizens can rate cleanliness of public facilities.
+    This is separate from staff inspections.
+    """
+    RATING_CHOICES = [
+        (1, "⭐ Very Poor"),
+        (2, "⭐⭐ Poor"),
+        (3, "⭐⭐⭐ Average"),
+        (4, "⭐⭐⭐⭐ Good"),
+        (5, "⭐⭐⭐⭐⭐ Excellent"),
+    ]
+    
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name="public_ratings")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # Can be anonymous
+    cleanliness_rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
+    comment = models.TextField(blank=True, help_text="Optional feedback")
+    photo = models.ImageField(upload_to="facility_ratings/", blank=True, null=True)
+    is_anonymous = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # For verification
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    is_verified = models.BooleanField(default=False, help_text="Verified by staff")
+    
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Public Rating"
+        verbose_name_plural = "Public Ratings"
+    
+    def __str__(self):
+        return f"{self.facility.name} - {'⭐' * self.cleanliness_rating} by {self.user or 'Anonymous'}"
+
+
+# -------------------------
+# Facility Inspection Log (Staff)
 # -------------------------
 class FacilityInspection(models.Model):
     CLEANLINESS_RATING = [
