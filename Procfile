@@ -1,1 +1,1 @@
-web: python create_auth_user_view.py && python manage.py migrate --noinput && gunicorn municipal.wsgi --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+web: python fix_custom_user.py && python manage.py migrate --noinput && gunicorn municipal.wsgi --bind 0.0.0.0:$PORT --timeout 120 --workers 2
