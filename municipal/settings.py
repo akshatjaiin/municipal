@@ -286,8 +286,8 @@ JAZZMIN_SETTINGS = {
                 "icon": "fas fa-tachometer-alt",
             },
             {
-                "name": "🔥 Overdue (SLA Breach)",
-                "url": "admin:civic_saathi_complaint_changelist?status__exact=pending",
+                "name": "🔥 Pending Complaints",
+                "url": "admin:civic_saathi_complaint_changelist",
                 "icon": "fas fa-fire text-danger",
             },
             {

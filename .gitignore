@@ -16,7 +16,7 @@ env/
 # db.sqlite3
 media/
 staticfiles/
-
+frontend
 # VS Code
 .vscode/
 
